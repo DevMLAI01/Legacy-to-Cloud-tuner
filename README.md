@@ -1,5 +1,13 @@
 # Legacy-to-Cloud Tuner
 
+<div align="center">
+
+| 🧠 Base Model | 💾 Memory Footprint | ⚙️ Trainable Params | 🖥️ Hardware |
+|:---:|:---:|:---:|:---:|
+| LLaMA **3.1-8B** | 16GB → **~5GB** (4-bit NF4) | Only **0.8%** of weights | Free Colab **T4 GPU** |
+
+</div>
+
 Fine-tune a quantized LLaMA 3.1-8B model to automatically translate legacy **Netezza SQL** queries into optimized **PySpark DataFrame** code — running entirely on Google Colab's free T4 GPU.
 
 ---
@@ -56,6 +64,15 @@ flowchart LR
 > 💡 **Memory footprint: 16GB base model → ~5GB with 4-bit quantization + LoRA**
 
 **Method:** QLoRA — 4-bit NF4 quantization of the base model + full-precision LoRA adapter training. Only ~0.8% of parameters are updated during training.
+
+---
+
+## 💼 Why This Matters
+Enterprise cloud migrations often involve thousands of legacy SQL queries that
+must be manually rewritten for modern data platforms — a process that takes weeks
+per project. This pipeline demonstrates how a domain-adapted LLaMA 3.1-8B model
+(fine-tuned with LoRA on just 0.8% of its parameters) can automate Netezza-to-PySpark
+translation, running entirely on free hardware with no proprietary dependencies.
 
 ---
 
