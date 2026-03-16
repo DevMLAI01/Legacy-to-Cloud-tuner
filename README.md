@@ -15,20 +15,45 @@ The notebook is designed to be:
 
 ---
 
-## Architecture
+## 🏗️ Architecture
 
+A **parameter-efficient fine-tuning pipeline** that adapts LLaMA 3.1-8B for
+SQL dialect translation using LoRA adapters and 4-bit quantization — runs entirely
+on a free Colab T4 GPU.
+
+```mermaid
+flowchart LR
+    subgraph INPUT [Training Data]
+        A[📄 Netezza SQL\nlegacy queries]
+        B[📄 PySpark target\ntranslations]
+        A & B --> C[Alpaca format\ninstruction / input / output]
+    end
+
+    subgraph MODEL [Base Model · Colab T4 16GB]
+        C --> D[🦙 LLaMA 3.1-8B\nunsloth/Meta-Llama-3.1-8B-bnb-4bit\nNF4 4-bit quantization ~5GB]
+        D --> E[⚙️ LoRA Adapters\nrank=16 · alpha=16\n0.8% trainable params ~100MB]
+    end
+
+    subgraph TRAIN [Fine-Tuning · Unsloth + TRL]
+        E --> F[SFTTrainer\nSFTConfig · fp16=True\n60 steps · batch=2]
+        F --> G{Validation\nLoss converging?}
+        G -->|✅ Yes| H
+        G -->|❌ No| F
+    end
+
+    subgraph EXPORT [Export & Deploy]
+        H[💾 GGUF Export\nq4_k_m compression]
+        H --> I([🚀 Ollama / llama.cpp\nlocal inference])
+        H --> J([☁️ Production API\nany GGUF-compatible server])
+    end
+
+    style INPUT fill:#1a2e1a,stroke:#4aff9e,color:#fff
+    style MODEL fill:#1a1a2e,stroke:#4a9eff,color:#fff
+    style TRAIN fill:#2e2a1a,stroke:#ffcc4a,color:#fff
+    style EXPORT fill:#2e1a2e,stroke:#cc4aff,color:#fff
 ```
-Netezza SQL (input)
-        │
-        ▼
-┌───────────────────────────────┐
-│   Meta-Llama-3.1-8B (4-bit)  │  ← Base model (frozen weights)
-│   + LoRA Adapters (r=16)      │  ← Fine-tuned delta weights (~100 MB)
-└───────────────────────────────┘
-        │
-        ▼
-PySpark DataFrame code (output)
-```
+
+> 💡 **Memory footprint: 16GB base model → ~5GB with 4-bit quantization + LoRA**
 
 **Method:** QLoRA — 4-bit NF4 quantization of the base model + full-precision LoRA adapter training. Only ~0.8% of parameters are updated during training.
 
